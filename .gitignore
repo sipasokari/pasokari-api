@@ -1,0 +1,11 @@
+# Dependencies
+node_modules
+/dist
+/build
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+*.log
+
+# OS generated files
+.DS_Store
