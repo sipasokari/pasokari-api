@@ -62,20 +62,27 @@ app.post('/api/contact', async (req, res) => {
     const newInquiry = new Inquiry({ name, phone, email, message });
     await newInquiry.save();
 
-    // B. Kirim Email Notifikasi (Menggunakan SendGrid API)
+    // B. Kirim Email Notifikasi (Dengan Error Handling Lebih Kuat)
     const mailOptions = {
-      to: process.env.EMAIL_PENGIRIM, // Penerima (Anda)
-      from: process.env.EMAIL_PENGIRIM, // Wajib menggunakan email yang diverifikasi SendGrid
-      subject: `📩 Pesan Baru dari Website: ${name}`,
-      html: `
-        <h3>Pesan Baru dari Website Pasokari</h3>
-        <p><strong>Nama:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Telepon:</strong> ${phone}</p>
-        <p><strong>Pesan:</strong></p>
-        <blockquote style="background:#eee; padding:10px;">${message}</blockquote>
-      `
+      to: process.env.EMAIL_PENGIRIM, 
+      from: process.env.EMAIL_PENGIRIM,
+      subject: `📩 Pesan Baru: ${name}`,
+      text: `Nama: ${name}\nEmail: ${email}\nTelepon: ${phone}\nPesan: ${message}`, // Tambah versi text biasa
+      html: `...` // (html tetap sama)
     };
+    
+    try {
+        await sgMail.send(mailOptions);
+        console.log("✅ Email terkirim ke SendGrid");
+    } catch (emailError) {
+        // TANGKAP ERROR AGAR SERVER TIDAK CRASH
+        console.error("⚠️ GAGAL KIRIM EMAIL (SendGrid Error):");
+        console.error(JSON.stringify(emailError, null, 2)); 
+        // Jangan throw error, biarkan respon tetap sukses agar user tidak bingung
+    }
+
+    // C. Respon Sukses
+    res.status(201).json({ success: true, message: "Pesan tersimpan!" });
     
     // Kirim email di latar belakang (non-blocking)
     sgMail.send(mailOptions)
